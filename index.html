@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Portal</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f3f4f6; --card: #ffffff; }
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { background: var(--card); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h1 { color: var(--primary); margin-top: 0; }
+        
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #374151; font-size: 0.9rem; }
+        input { width: 93%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; outline: none; }
+        input:focus { border-color: var(--primary); }
+        
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background-color: var(--primary); color: white; font-size: 1rem; margin-top: 10px; }
+        button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        
+        #status { margin-top: 15px; font-size: 0.9rem; min-height: 20px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Class Check-In</h1>
+
+    <div class="form-group">
+        <label>Lecture / Class Name</label>
+        <input type="text" id="lectureInput" placeholder="e.g. Pathology 101" required>
+    </div>
+
+    <div class="form-group">
+        <label>Your Attendance Code</label>
+        <input type="text" id="codeInput" placeholder="Enter ID" required>
+    </div>
+
+    <button id="submitBtn" onclick="sendData()">Submit Attendance</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    const lectureField = document.getElementById('lectureInput');
+    const codeField = document.getElementById('codeInput');
+    const btn = document.getElementById('submitBtn');
+    const statusDiv = document.getElementById('status');
+
+    // !!! PASTE YOUR GOOGLE SCRIPT URL BELOW INSIDE THE QUOTES !!!
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9E4tov3UVqrUUrCm4YTM0xoj-PaRF923-eU0gfb0DeWQN8jKj_HrdWY4PGmQvx1Ld-g/exec"; 
+
+    function sendData() {
+        const lecture = lectureField.value.trim();
+        const code = codeField.value.trim();
+
+        if (!lecture || !code) {
+            statusDiv.innerHTML = "<span class='error'>Please fill in both fields.</span>";
+            return;
+        }
+
+        if (SCRIPT_URL === "PASTE_YOUR_WEB_APP_URL_HERE") {
+            alert("Error: You haven't pasted the Google Script URL in the code yet!");
+            return;
+        }
+
+        // Disable button while sending
+        btn.disabled = true;
+        btn.innerText = "Sending...";
+        statusDiv.innerText = "";
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Important for Google Script
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lecture: lecture, code: code })
+        }).then(() => {
+            // Success
+            statusDiv.innerHTML = "<span class='success'>Recorded: " + code + "</span>";
+            codeField.value = ''; // Clear code only
+            codeField.focus();    // Ready for next input
+            btn.disabled = false;
+            btn.innerText = "Submit Attendance";
+        }).catch(err => {
+            console.error(err);
+            statusDiv.innerHTML = "<span class='error'>Failed to send. Check internet.</span>";
+            btn.disabled = false;
+            btn.innerText = "Submit Attendance";
+        });
+    }
+
+    // Submit on Enter key in the code box
+    codeField.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") sendData();
+    });
+</script>
+
+</body>
+</html>
