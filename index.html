@@ -29,12 +29,17 @@
     <h1>Class Check-In</h1>
 
     <div class="form-group">
-        <label>Lecture / Class Name</label>
+        <label>Lecture Name</label>
         <input type="text" id="lectureInput" placeholder="e.g. Pathology 101" required>
     </div>
 
     <div class="form-group">
-        <label>Your Attendance Code</label>
+        <label>Full Name</label>
+        <input type="text" id="nameInput" placeholder="John Doe" required>
+    </div>
+
+    <div class="form-group">
+        <label>Matric No / Code</label>
         <input type="text" id="codeInput" placeholder="Enter ID" required>
     </div>
 
@@ -44,56 +49,67 @@
 
 <script>
     const lectureField = document.getElementById('lectureInput');
+    const nameField = document.getElementById('nameInput');
     const codeField = document.getElementById('codeInput');
     const btn = document.getElementById('submitBtn');
     const statusDiv = document.getElementById('status');
 
-    // !!! PASTE YOUR GOOGLE SCRIPT URL BELOW INSIDE THE QUOTES !!!
+    // !!! PASTE YOUR GOOGLE SCRIPT URL BELOW !!!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9E4tov3UVqrUUrCm4YTM0xoj-PaRF923-eU0gfb0DeWQN8jKj_HrdWY4PGmQvx1Ld-g/exec"; 
 
     function sendData() {
         const lecture = lectureField.value.trim();
+        const name = nameField.value.trim();
         const code = codeField.value.trim();
 
-        if (!lecture || !code) {
-            statusDiv.innerHTML = "<span class='error'>Please fill in both fields.</span>";
+        if (!lecture || !name || !code) {
+            statusDiv.innerHTML = "<span class='error'>Please fill in all fields.</span>";
             return;
         }
 
-        if (SCRIPT_URL === "PASTE_YOUR_WEB_APP_URL_HERE") {
-            alert("Error: You haven't pasted the Google Script URL in the code yet!");
-            return;
-        }
-
-        // Disable button while sending
         btn.disabled = true;
-        btn.innerText = "Sending...";
+        btn.innerText = "Processing...";
         statusDiv.innerText = "";
 
+        // Capture IP for security (optional but recommended)
+        fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            submitToGoogle(lecture, name, code, data.ip, navigator.userAgent);
+        })
+        .catch(() => {
+            submitToGoogle(lecture, name, code, "Unknown", navigator.userAgent);
+        });
+    }
+
+    function submitToGoogle(lecture, name, code, ip, device) {
         fetch(SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', // Important for Google Script
+            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lecture: lecture, code: code })
+            body: JSON.stringify({ 
+                lecture: lecture, 
+                name: name,
+                code: code, 
+                ip: ip,
+                device: device
+            })
         }).then(() => {
-            // Success
-            statusDiv.innerHTML = "<span class='success'>Recorded: " + code + "</span>";
-            codeField.value = ''; // Clear code only
-            codeField.focus();    // Ready for next input
+            statusDiv.innerHTML = "<span class='success'>Success! " + name + " recorded.</span>";
+            
+            // Clear Name and Code, but keep Lecture Name (easier for next student if shared device)
+            nameField.value = '';
+            codeField.value = '';
+            
+            nameField.focus(); // Focus back to name for next entry
             btn.disabled = false;
             btn.innerText = "Submit Attendance";
         }).catch(err => {
-            console.error(err);
-            statusDiv.innerHTML = "<span class='error'>Failed to send. Check internet.</span>";
+            statusDiv.innerHTML = "<span class='error'>Failed to send. Check connection.</span>";
             btn.disabled = false;
             btn.innerText = "Submit Attendance";
         });
     }
-
-    // Submit on Enter key in the code box
-    codeField.addEventListener("keypress", function(event) {
-        if (event.key === "Enter") sendData();
-    });
 </script>
 
 </body>
